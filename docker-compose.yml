@@ -1,0 +1,10 @@
+version: '3.4'
+
+services:
+  nlp-natasha:
+    image: nlp-natasha
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - 8000:8000

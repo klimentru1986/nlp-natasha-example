@@ -1,0 +1,25 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "pre-compose",
+      "type": "shell",
+      "command": "sleep 3s",
+      "dependsOn": "docker-compose"
+    },
+    {
+      "label": "docker-compose",
+      "type": "docker-compose",
+      "dockerCompose": {
+        "up": {
+          "detached": true,
+          "build": true
+        },
+        "files": [
+          "${workspaceFolder}/docker-compose.yml",
+          "${workspaceFolder}/docker-compose.debug.yml"
+        ]
+      }
+    }
+  ]
+}
