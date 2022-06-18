@@ -3,23 +3,38 @@ from pullenti_client import Client
 
 from src.dto.predict_in_dto import PredictInDto
 from src.dto.pullenti_addr_out_dto import PullentiAddrOutDto
+from src.dto.pullenti_names_out_dto import PullentiNamesOutDto
 
 
 class NlpPullenti:
     def predict(self, predict_dto: PredictInDto):
         client = Client("pullenti-server", 8080)
 
-        predicted = client(predict_dto.text)
+        doc = client(predict_dto.text)
 
-        predicted_addr = [m for m in predicted.matches if m.referent.label == "ADDRESS"]
-
-        # return predicted_addr
-
-        result = self._get_attribute(
-            sources=predicted_addr, target_object=PullentiAddrOutDto
-        )
+        result = {
+            "names": self._get_names(doc),
+            "addr": self._get_addr(doc),
+        }
 
         return result
+
+    def _get_names(self, src):
+        sources = [m for m in src.matches if m.referent.label == "PERSON"]
+
+        items = list()
+        valid_fields = PullentiNamesOutDto.__annotations__.keys()
+        Item = namedtuple("Item", valid_fields, defaults=[None] * len(valid_fields))
+
+        for i in sources:
+            data = {
+                str(s.key.lower()): s.value
+                for s in i.referent.slots
+                if s.key.lower() in valid_fields and isinstance(s.value, str)
+            }
+
+            items.append(Item(**data))
+        return [PullentiNamesOutDto(**i._asdict()) for i in items]
 
     @staticmethod
     def _special_processing_street(object):
@@ -27,9 +42,11 @@ class NlpPullenti:
         name = next((x for x in object.slots if x.key == "NAME"), None)
         return name.value
 
-    def _get_attribute(self, sources, target_object):
+    def _get_addr(self, src):
+        sources = [m for m in src.matches if m.referent.label == "ADDRESS"]
+
         items = list()
-        valid_fields = target_object.__annotations__.keys()
+        valid_fields = PullentiAddrOutDto.__annotations__.keys()
         Item = namedtuple("Item", valid_fields, defaults=[None] * len(valid_fields))
 
         for i in sources:
@@ -53,4 +70,4 @@ class NlpPullenti:
                 data["geo"] = self._special_processing_street(geo.referent)
 
             items.append(Item(**data))
-        return [target_object(**i._asdict()) for i in items]
+        return [PullentiAddrOutDto(**i._asdict()) for i in items]

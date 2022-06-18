@@ -1,9 +1,9 @@
-from typing import TypedDict
+from pydantic import BaseModel
 
 
-class PullentiAddrOutDto(TypedDict):
-    geo: str
-    street: str
-    house: str
-    zip: str
-    flat: str
+class PullentiAddrOutDto(BaseModel):
+    geo: str | None
+    street: str | None
+    house: str | None
+    zip: str | None
+    flat: str | None
