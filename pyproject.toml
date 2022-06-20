@@ -12,6 +12,7 @@ natasha = "^1.4.0"
 black = "^22.3.0"
 gunicorn = "^20.1.0"
 pullenti-client = "^0.6.0"
+pullenti = "^4.1"
 
 [tool.poetry.dev-dependencies]
 black = {version = "^22.3.0", allow-prereleases = true}

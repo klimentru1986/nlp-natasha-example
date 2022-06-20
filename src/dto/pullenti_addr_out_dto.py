@@ -2,7 +2,8 @@ from pydantic import BaseModel
 
 
 class PullentiAddrOutDto(BaseModel):
-    geo: str | None
+    region: str | None
+    city: str | None
     street: str | None
     house: str | None
     corpus: str | None

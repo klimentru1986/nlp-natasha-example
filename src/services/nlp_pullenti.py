@@ -1,5 +1,6 @@
 from collections import namedtuple
 from pullenti_client import Client
+from pullenti.ner.geo.GeoReferent import GeoReferent
 
 from src.dto.predict_in_dto import PredictInDto
 from src.dto.pullenti_addr_out_dto import PullentiAddrOutDto
@@ -37,10 +38,16 @@ class NlpPullenti:
         return [PullentiNamesOutDto(**i._asdict()) for i in items]
 
     @staticmethod
-    def _special_processing_street(object):
-
+    def _special_processing_addr(object):
+        addr_type = next(
+            (x for x in object.slots if x.key == "TYP" or x.key == "TYPE"), None
+        )
         name = next((x for x in object.slots if x.key == "NAME"), None)
-        return name.value
+        number = next((x for x in object.slots if x.key == "NUMBER"), None)
+
+        result = [_.value for _ in [addr_type, name, number] if _ is not None]
+
+        return " ".join(result)
 
     def _get_addr(self, src):
         sources = [m for m in src.matches if m.referent.label == "ADDRESS"]
@@ -56,18 +63,55 @@ class NlpPullenti:
                 if s.key.lower() in valid_fields and isinstance(s.value, str)
             }
 
-            children = list(i.children)
-            for c in children:
-                if c.children:
-                    children.append(*c.children)
-
-            street = next((x for x in children if x.referent.label == "STREET"), None)
+            street = next((x for x in i.children if x.referent.label == "STREET"), None)
             if street:
-                data["street"] = self._special_processing_street(street.referent)
+                data["street"] = self._special_processing_addr(street.referent)
 
-            geo = next((x for x in children if x.referent.label == "GEO"), None)
-            if geo:
-                data["geo"] = self._special_processing_street(geo.referent)
+            city = self._get_city(i.children)
+            if city:
+                data["city"] = self._special_processing_addr(city.referent)
+
+            region = self._get_region(i.children)
+            if region:
+                data["region"] = self._special_processing_addr(region.referent)
 
             items.append(Item(**data))
         return [PullentiAddrOutDto(**i._asdict()) for i in items]
+
+    def _get_city(self, children):
+        if len(children) == 0:
+            return None
+
+        geo = next(
+            (
+                x
+                for x in children
+                if x.referent.label == "GEO"
+                and GeoReferent._GeoReferent__is_city(str(x.referent.slots))
+            ),
+            None,
+        )
+
+        if geo:
+            return geo
+        else:
+            return self._get_city(children=children.children)
+
+    def _get_region(self, children):
+        if len(children) == 0:
+            return None
+
+        geo = next(
+            (
+                x
+                for x in children
+                if x.referent.label == "GEO"
+                and GeoReferent._GeoReferent__is_region(str(x.referent.slots))
+            ),
+            None,
+        )
+
+        if geo:
+            return geo
+        else:
+            return self._get_region(children=children.children)
