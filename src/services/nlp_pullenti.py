@@ -35,6 +35,8 @@ class NlpPullenti:
             }
 
             items.append(Item(**data))
+
+        items = list(dict.fromkeys(items))
         return [PullentiNamesOutDto(**i._asdict()) for i in items]
 
     @staticmethod
@@ -76,6 +78,8 @@ class NlpPullenti:
                 data["region"] = self._special_processing_addr(region.referent)
 
             items.append(Item(**data))
+
+        items = list(dict.fromkeys(items))
         return [PullentiAddrOutDto(**i._asdict()) for i in items]
 
     def _get_city(self, children):
