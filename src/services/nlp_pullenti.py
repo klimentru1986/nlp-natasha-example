@@ -54,6 +54,13 @@ class NlpPullenti:
 
     def _get_addr(self, src):
         sources = [m for m in src.matches if m.referent.label == "ADDRESS"]
+        person_matchers = [m for m in src.matches if m.referent.label == "PERSON"]
+        person_sources = self._flat_map_children(person_matchers)
+        person_sources = [
+            m for m in person_sources if m.referent.label == "ADDRESS"
+        ]
+
+        sources = [*sources, *person_sources]
 
         items = list()
         valid_fields = PullentiAddrOutDto.__annotations__.keys()
