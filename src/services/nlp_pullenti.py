@@ -1,4 +1,5 @@
 from collections import namedtuple
+from functools import reduce
 from pullenti_client import Client
 from pullenti.ner.geo.GeoReferent import GeoReferent
 
@@ -99,7 +100,8 @@ class NlpPullenti:
         if geo:
             return geo
         else:
-            return self._get_city(children=children.children)
+            ch = self._flat_map_children(children)
+            return self._get_city(children=ch)
 
     def _get_region(self, children):
         if len(children) == 0:
@@ -118,4 +120,10 @@ class NlpPullenti:
         if geo:
             return geo
         else:
-            return self._get_region(children=children.children)
+            ch = self._flat_map_children(children)
+            return self._get_region(children=ch)
+
+    @staticmethod
+    def _flat_map_children(arr):
+        list_of_children = [_.children for _ in arr]
+        return reduce(list.__add__, list_of_children)
