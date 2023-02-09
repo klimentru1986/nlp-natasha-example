@@ -14,17 +14,15 @@ class NlpPullenti:
 
         doc = client(predict_dto.text)
 
-        result = {
+        return {
             "names": self._get_names(doc),
             "addr": self._get_addr(doc),
         }
 
-        return result
-
     def _get_names(self, src):
         sources = [m for m in src.matches if m.referent.label == "PERSON"]
 
-        items = list()
+        items = []
         valid_fields = PullentiNamesOutDto.__annotations__.keys()
         Item = namedtuple("Item", valid_fields, defaults=[None] * len(valid_fields))
 
@@ -42,9 +40,7 @@ class NlpPullenti:
 
     @staticmethod
     def _special_processing_addr(object):
-        addr_type = next(
-            (x for x in object.slots if x.key == "TYP" or x.key == "TYPE"), None
-        )
+        addr_type = next((x for x in object.slots if x.key in ["TYP", "TYPE"]), None)
         name = next((x for x in object.slots if x.key == "NAME"), None)
         number = next((x for x in object.slots if x.key == "NUMBER"), None)
 
@@ -62,7 +58,7 @@ class NlpPullenti:
 
         sources = [*sources, *person_sources]
 
-        items = list()
+        items = []
         valid_fields = PullentiAddrOutDto.__annotations__.keys()
         Item = namedtuple("Item", valid_fields, defaults=[None] * len(valid_fields))
 
@@ -73,16 +69,15 @@ class NlpPullenti:
                 if s.key.lower() in valid_fields and isinstance(s.value, str)
             }
 
-            street = next((x for x in i.children if x.referent.label == "STREET"), None)
-            if street:
+            if street := next(
+                (x for x in i.children if x.referent.label == "STREET"), None
+            ):
                 data["street"] = self._special_processing_addr(street.referent)
 
-            city = self._get_city(i.children)
-            if city:
+            if city := self._get_city(i.children):
                 data["city"] = self._special_processing_addr(city.referent)
 
-            region = self._get_region(i.children)
-            if region:
+            if region := self._get_region(i.children):
                 data["region"] = self._special_processing_addr(region.referent)
 
             items.append(Item(**data))
@@ -94,7 +89,7 @@ class NlpPullenti:
         if len(children) == 0:
             return None
 
-        geo = next(
+        if geo := next(
             (
                 x
                 for x in children
@@ -102,19 +97,16 @@ class NlpPullenti:
                 and GeoReferent._GeoReferent__is_city(str(x.referent.slots))
             ),
             None,
-        )
-
-        if geo:
+        ):
             return geo
-        else:
-            ch = self._flat_map_children(children)
-            return self._get_city(children=ch)
+        ch = self._flat_map_children(children)
+        return self._get_city(children=ch)
 
     def _get_region(self, children):
         if len(children) == 0:
             return None
 
-        geo = next(
+        if geo := next(
             (
                 x
                 for x in children
@@ -122,13 +114,10 @@ class NlpPullenti:
                 and GeoReferent._GeoReferent__is_region(str(x.referent.slots))
             ),
             None,
-        )
-
-        if geo:
+        ):
             return geo
-        else:
-            ch = self._flat_map_children(children)
-            return self._get_region(children=ch)
+        ch = self._flat_map_children(children)
+        return self._get_region(children=ch)
 
     @staticmethod
     def _flat_map_children(arr):

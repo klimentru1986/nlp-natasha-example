@@ -9,11 +9,9 @@ app = FastAPI()
 
 @app.post("/predict/natasha")
 def predict(predict_dto: PredictInDto, nlp_service: NlpService = Depends(NlpService)):
-    result = nlp_service.predict(predict_dto=predict_dto)
-    return result
+    return nlp_service.predict(predict_dto=predict_dto)
 
 
 @app.post("/predict/pullenti")
 def predict(predict_dto: PredictInDto, nlp_service: NlpPullenti = Depends(NlpPullenti)):
-    result = nlp_service.predict(predict_dto=predict_dto)
-    return result
+    return nlp_service.predict(predict_dto=predict_dto)
