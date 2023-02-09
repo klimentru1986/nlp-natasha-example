@@ -47,13 +47,11 @@ class NlpService:
             if span.type == PER:
                 span.extract_fact(names_extractor)
 
-        result = [
+        return [
             {"normal": _.normal, **_.fact.as_dict}
             for _ in doc.spans
             if _.type == PER and _.fact is not None
         ]
-
-        return result
 
     def _get_addr(self, doc: Doc):
 
@@ -62,6 +60,4 @@ class NlpService:
 
         loc = [list(addr_extractor(_.text)) for _ in doc.sents]
 
-        result = [[_.fact for _ in l if _.fact] for l in loc if len(l)]
-
-        return result
+        return [[_.fact for _ in l if _.fact] for l in loc if len(l)]
